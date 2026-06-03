@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 # ═══════════════════════════════════════════
 # VERSION — wird für Auto-Update bruucht
 # ═══════════════════════════════════════════
-BOT_VERSION = "2.2.0"
+BOT_VERSION = "2.3.0"
 UPDATE_URL  = "https://raw.githubusercontent.com/Novaai40/bot-zentrale/main/bot.py"
 VERSION_URL = "https://raw.githubusercontent.com/Novaai40/bot-zentrale/main/version.json"
 
@@ -32,9 +32,30 @@ POLL_TIMEOUT  = int(os.environ.get("POLL_TIMEOUT", "30"))
 MAX_HISTORY   = int(os.environ.get("MAX_HISTORY", "20"))
 BROWSER_URL   = os.environ.get("BROWSER_URL", "http://host.docker.internal:9229")
 MEMORY_DIR    = os.environ.get("MEMORY_DIR", "/app/memory")
+CREDENTIALS_FILE = os.environ.get("CREDENTIALS_FILE", f"/app/credentials.json")
 
 # ─── Pfad zum eigene Code (WICHTIG fürs Self-Update!) ───
 BOT_PATH = "/app/bot.py"
+
+# ─── Login-Hilfe: Credentials pro Site ───
+def load_credentials():
+    """Lad gspiicherti Zuegangsdate pro Projekt."""
+    try:
+        if os.path.exists(CREDENTIALS_FILE):
+            with open(CREDENTIALS_FILE) as f:
+                return json.load(f)
+    except: pass
+    return {}
+
+def save_credentials(data):
+    """Spicheret Zuegangsdate."""
+    try:
+        with open(CREDENTIALS_FILE, "w") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        log.error(f"Credentials save: {e}")
+        return False
 
 logging.basicConfig(level=logging.INFO, format=f"%(asctime)s [{BOT_NAME}] %(levelname)s %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger(__name__)
@@ -305,6 +326,7 @@ def browser_type(selector, text): return browser_call("type", selector=selector,
 def browser_text(selector="body"): return browser_call("text", selector=selector)
 def browser_screenshot():     return browser_call("screenshot")
 def browser_js(code):         return browser_call("js", code=code)
+def browser_save_state():     return browser_call("state")
 
 # ─── DeepSeek ───
 DS_URL = "https://api.deepseek.com/chat/completions"
@@ -619,6 +641,11 @@ class BotAgent:
             f"<code>!type SELECTOR | TEXT</code> - Tippe\n"
             f"<code>!screenshot</code> - Screenshot\n"
             f"<code>!js CODE</code> - JS usfuehre\n\n"
+            f"Login:\n"
+            f"<code>!setpass SITE email=... pw=...</code> - Zuegangsdate hinterlege\n"
+            f"<code>!login SITE</code> - Automatisch iilogge (youtube facebook)\n"
+            f"<code>!creds</code> - Gspiicherti Accounts ahluege\n"
+            f"<code>!deletepass SITE</code> - Löscht Zuegangsdate\n\n"
             f"Auto-Update:\n"
             f"<code>!update</code> - Code vo GitHub lade & neu starte\n"
             f"Der Bot prueft automatisch alli 60 Minute obs es Update git!\n\n"
@@ -657,6 +684,122 @@ class BotAgent:
         self.self_improving._save_state()
         send_message(chat_id, "Gedaechtnis glerrt! Frischer Start")
 
+    def handle_setpass(self, chat_id, text):
+        """!setpass youtube email=xyz pw=abc"""
+        parts = text.split()
+        if len(parts) < 2:
+            send_message(chat_id, "Bruuch: <code>!setpass SITE email=... pw=...</code>\nZ.B.: <code>!setpass youtube email=smartcashzurich@gmail.com pw=Meier5630Meier</code>")
+            return
+        site = parts[1].lower()
+        creds = load_credentials()
+        if site not in creds:
+            creds[site] = {}
+        for kv in parts[2:]:
+            if "=" in kv:
+                k, v = kv.split("=", 1)
+                creds[site][k.lower()] = v
+        if save_credentials(creds):
+            hidden = {k: (v[:3]+"..."+v[-2:] if len(v)>5 else "***") for k,v in creds[site].items()}
+            send_message(chat_id, f"<b>{site}</b> gspiicheret!\n{hidden}")
+        else:
+            send_message(chat_id, "Fehler bim Speichere!")
+
+    def handle_login(self, chat_id, site):
+        """!login site → automatische Iilogg"""
+        creds = load_credentials()
+        site = site.lower()
+        if site not in creds:
+            send_message(chat_id, f"Kei Zuegangsdate für <b>{site}</b>.\nBruuch: <code>!setpass {site} email=... pw=...</code>")
+            return
+        data = creds[site]
+        send_message(chat_id, f"Starte Login für <b>{site}</b>...")
+
+        if site == "youtube" or site == "google":
+            email = data.get("email") or data.get("user") or ""
+            pw = data.get("pw") or data.get("password") or ""
+            if not email or not pw:
+                send_message(chat_id, f"Email oder Passwort fehlt für {site}")
+                return
+            # Google Login automatisier
+            r = browser_navigate("https://accounts.google.com/signin/v2/identifier?service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin&hl=de&flowName=GlifWebSignIn&flowEntry=ServiceLogin")
+            if r.get("status") != "ok":
+                send_message(chat_id, f"Fehler: {r.get('message','')}")
+                return
+            time.sleep(2)
+            browser_type("#identifierId", email)
+            time.sleep(1)
+            browser_click("#identifierNext")
+            time.sleep(3)
+            # Passwort-Feld
+            browser_type("#password", pw)
+            time.sleep(1)
+            browser_click("#passwordNext")
+            time.sleep(4)
+            # Pruefe obs klappt het
+            r2 = browser_text()
+            if "willkommen" in r2.get("text","").lower() or r2.get("url","").startswith("https://www.youtube.com"):
+                browser_save_state()
+                send_message(chat_id, "✅ YouTube Login erfolgreich! Cookies gspiicheret.")
+            else:
+                page_text = r2.get("text","")[:200]
+                if "bestätigen" in page_text or "confirm" in page_text:
+                    send_message(chat_id, f"⚠️ Google brucht Bestätigung (2FA/Handy). Logg di iim Dashboard ii: http://localhost:9229")
+                else:
+                    send_message(chat_id, f"⚠️ Login nid ganz klar. Lueg im Dashboard: http://localhost:9229")
+
+        elif site == "facebook":
+            email = data.get("email") or data.get("user") or ""
+            pw = data.get("pw") or data.get("password") or ""
+            if not email or not pw:
+                send_message(chat_id, f"Email oder Passwort fehlt für {site}")
+                return
+            r = browser_navigate("https://facebook.com/login")
+            if r.get("status") != "ok":
+                send_message(chat_id, f"Fehler: {r.get('message','')}")
+                return
+            time.sleep(2)
+            browser_type("#email", email)
+            time.sleep(0.5)
+            browser_type("#pass", pw)
+            time.sleep(0.5)
+            browser_click("button[name=login]")
+            time.sleep(4)
+            r2 = browser_text("body")
+            page_text = r2.get("text","")[:500]
+            if "login" not in page_text.lower() and "anmelden" not in page_text.lower():
+                browser_save_state()
+                send_message(chat_id, "✅ Facebook Login erfolgreich! Cookies gspiicheret.")
+            else:
+                if "bestätigen" in page_text or "approve" in page_text:
+                    send_message(chat_id, f"⚠️ Facebook brucht Bestätigung. Logg di im Dashboard ii: http://localhost:9229")
+                else:
+                    send_message(chat_id, f"⚠️ Login nid klar. Lueg im Dashboard: http://localhost:9229")
+
+        else:
+            send_message(chat_id, f"Unbekannti Site: {site}.\nKann: youtube, google, facebook")
+
+    def handle_creds(self, chat_id):
+        """Zeigt gspiicherti Zuegangsdate (ohni PW)"""
+        creds = load_credentials()
+        if not creds:
+            send_message(chat_id, "Kei Zuegangsdate gspiicheret.\nBruuch: <code>!setpass SITE email=... pw=...</code>")
+            return
+        lines = []
+        for site, data in creds.items():
+            visible = {k: (v[:3]+"..." if k in ("pw","password") and len(v)>3 else v) for k,v in data.items()}
+            lines.append(f"<b>{site}:</b> {visible}")
+        send_message(chat_id, "<b>Gspiicherti Zuegangsdate:</b>\n" + "\n".join(lines))
+
+    def handle_deletepass(self, chat_id, site):
+        """!deletepass site"""
+        creds = load_credentials()
+        if site.lower() in creds:
+            del creds[site.lower()]
+            save_credentials(creds)
+            send_message(chat_id, f"{site} glöscht!")
+        else:
+            send_message(chat_id, f"{site} nid gfunde.")
+
     def _auto_update_check(self):
         """Prueft automatisch alli 60 Minute obs es Update git."""
         now = time.time()
@@ -693,6 +836,10 @@ class BotAgent:
             elif text == "!reflect": self.handle_reflect(chat_id)
             elif text == "!memory": self.handle_memory(chat_id)
             elif text == "!forget": self.handle_forget(chat_id)
+            elif text.startswith("!setpass "): self.handle_setpass(chat_id, text)
+            elif text.startswith("!login "): self.handle_login(chat_id, text[7:])
+            elif text == "!creds" or text == "!credentials": self.handle_creds(chat_id)
+            elif text.startswith("!deletepass "): self.handle_deletepass(chat_id, text[12:])
             else: self.handle_message(chat_id, text, reply_to)
 
             # Nach jeder Nohricht: Update-Check
