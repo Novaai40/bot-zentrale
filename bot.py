@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 # ═══════════════════════════════════════════
 # VERSION — wird für Auto-Update bruucht
 # ═══════════════════════════════════════════
-BOT_VERSION = "2.1.0"
+BOT_VERSION = "2.2.0"
 UPDATE_URL  = "https://raw.githubusercontent.com/Novaai40/bot-zentrale/main/bot.py"
 VERSION_URL = "https://raw.githubusercontent.com/Novaai40/bot-zentrale/main/version.json"
 
@@ -86,56 +86,56 @@ def send_chunked(chat_id, text, reply_to=None, max_len=4000):
 # ═══════════════════════════════════════════
 
 def check_for_updates(chat_id=None):
-    """Prüeft obs en neu! Version git. Updated automatisch wenn ja."""
+    """Prueft obs en nei Version git. Updated automatisch wenn ja."""
     try:
         # Version-Info lade
         req = urllib.request.Request(VERSION_URL, headers={"User-Agent": "Nova-Bot"})
         with urllib.request.urlopen(req, timeout=10) as resp:
             version_data = json.loads(resp.read().decode("utf-8"))
-        
+
         latest = version_data.get("version", "0.0.0")
         changelog = version_data.get("changelog", "")
-        
-        log.info(f"🔍 Update-Check: aktuell={BOT_VERSION}, latest={latest}")
-        
+
+        log.info(f"Update-Check: aktuell={BOT_VERSION}, latest={latest}")
+
         if latest <= BOT_VERSION:
             if chat_id:
-                send_message(chat_id, f"✅ Bot isch aktuell (v{BOT_VERSION})")
+                send_message(chat_id, f"Aktuell (v{BOT_VERSION})")
             return False
-        
+
         # Neui Version -> LADE!
         if chat_id:
-            send_message(chat_id, f"🔄 Neui Version {latest} gfunde! Lade Update...")
-        
+            send_message(chat_id, f"Neui Version {latest} gfunde! Lade Update...")
+
         req2 = urllib.request.Request(UPDATE_URL, headers={"User-Agent": "Nova-Bot"})
         with urllib.request.urlopen(req2, timeout=30) as resp:
             new_code = resp.read().decode("utf-8")
-        
-        # Alte Code überschribe
+
+        # Alte Code ueberschribe
         with open(BOT_PATH, "w", encoding="utf-8") as f:
             f.write(new_code)
-        
-        msg = f"✅ Update uf v{latest} erfolgreich!\n📝 {changelog}"
+
+        msg = f"Update uf v{latest} erfolgreich!\n{changelog}"
         if chat_id:
             send_message(chat_id, msg)
-        
-        log.info(f"🔄 Code updated uf v{latest}. Starte neu...")
+
+        log.info(f"Code updated uf v{latest}. Starte neu...")
         return "restart"
-        
+
     except urllib.error.HTTPError as e:
-        err = f"❌ Update-Fehler: HTTP {e.code}"
+        err = f"Update-Fehler: HTTP {e.code}"
         if e.code == 404:
-            err = "⚠️ Kei Update-Quelle gfunde (Repo noni bereit)"
+            err = "Kei Update-Quelle gfunde (Repo noni bereit)"
     except Exception as e:
-        err = f"❌ Update-Fehler: {e}"
-    
+        err = f"Update-Fehler: {e}"
+
     log.warning(err)
     if chat_id:
         send_message(chat_id, err)
     return False
 
 def _load_bot_version():
-    """Läst d'Version us de Datei (nach Update)."""
+    """Laed d'Version us de Datei (nach Update)."""
     try:
         with open(BOT_PATH) as f:
             for line in f:
@@ -160,7 +160,7 @@ class SelfImproving:
         self.message_count = 0
         self.last_review_file = os.path.join(self.memory_dir, "last_review.json")
         self._load_state()
-        log.info(f"🧠 Self-Improving initialisiert ({self.memory_dir})")
+        log.info(f"Self-Improving initialisiert ({self.memory_dir})")
 
     def _load_state(self):
         try:
@@ -196,13 +196,13 @@ class SelfImproving:
             f"## Korrektur vom {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
             f"**User gseit:** {user_msg[:300]}\n"
             f"**Bot het gantwortet:** {bot_response[:300]}\n"
-            f"**Korrektur/Rückmeldig:** {correction_text[:500]}\n\n"
+            f"**Korrektur/Rueckmeldig:** {correction_text[:500]}\n\n"
             f"---\n"
         )
         try:
             with open(self.corrections_file, "a") as f:
                 f.write(entry)
-            log.info(f"📝 Korrektur gspiicheret")
+            log.info(f"Korrektur gspiicheret")
         except Exception as e:
             log.error(f"Fehler: {e}")
 
@@ -211,7 +211,7 @@ class SelfImproving:
         try:
             with open(self.memory_file, "a") as f:
                 f.write(f"- [{source}] {lesson} ({timestamp})\n")
-            log.info(f"💾 Memory: {lesson[:60]}")
+            log.info(f"Memory: {lesson[:60]}")
         except: pass
 
     def load_memories(self):
@@ -239,15 +239,15 @@ class SelfImproving:
         if not recent: return
 
         prompt = (
-            f"Du bisch {BOT_NAME}, en KI-Agent för {PROJEKT_ID}. "
-            f"Mach eni kurzi Selbstreflexion über die letschte Interaktionie.\n\n"
+            f"Du bisch {BOT_NAME}, en KI-Agent fuer {PROJEKT_ID}. "
+            f"Mach eni kurzi Selbstreflexion ueber die letschte Interaktionie.\n\n"
             f"LETSCHTI INTERAKTIONE:\n"
             + "\n".join([f"User: {r['user'][:100]}\nBot: {r['bot'][:100]}" for r in recent[-5:]]) +
             f"\n\nFRAGE AN DICH:\n"
             f"1. Was hani guet gmacht?\n"
             f"2. Was hani falsch gmacht oder cha besser?\n"
             f"3. Welchi Lern-Lektion chani druus zieh?\n\n"
-            f"Antwort in 1-2 Sätz pro Frag. LEKTION: [Ein Satz was du besser mache wit]"
+            f"Antwort in 1-2 Saetz pro Frag. LEKTION: [Ein Satz was du besser mache wit]"
         )
         try:
             headers = {"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"}
@@ -257,30 +257,30 @@ class SelfImproving:
                 data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
             with urllib.request.urlopen(req, timeout=30) as resp:
                 review = json.loads(resp.read().decode("utf-8"))["choices"][0]["message"]["content"]
-            
+
             lesson = ""
             for line in review.split("\n"):
                 if line.startswith("LEKTION:"):
                     lesson = line.replace("LEKTION:", "").strip()
             if lesson: self.add_memory(lesson, "self-review")
-            
+
             send_message(chat_id,
-                f"<b>🔄 Selbstreflexion #{self.message_count // 20}</b>\n\n"
+                f"<b>Selbstreflexion #{self.message_count // 20}</b>\n\n"
                 f"{review[:1500]}\n\n"
-                f"{'📝 Lektion gspiicheret: ' + lesson if lesson else ''}")
+                f"{'Lektion gspiicheret: ' + lesson if lesson else ''}")
         except Exception as e:
             log.error(f"Self-review fehlgschlage: {e}")
 
     def get_system_prompt_extension(self):
         memories = self.load_memories()
         ext = (
-            f"\n\n🧠 SELBSTVERBESSERUNG (AKTIV)\n"
+            f"\n\nSELBSTVERBESSERUNG (AKTIV)\n"
             f"- Du analysiersch dini eigene Fehler und verbesserisch dich.\n"
             f"- Wenn dir en Fehler passiert, lernsch druus.\n"
-            f"- Reflektier öber dini Antwort bevor du se abschicksch.\n"
+            f"- Reflektier oebber dini Antwort bevor du se abschicksch.\n"
         )
         if memories:
-            ext += f"\n📚 GSPICHERTI LEKTIONE:\n{memories[:2000]}\n"
+            ext += f"\nGSPICHERTI LEKTIONE:\n{memories[:2000]}\n"
         return ext
 
 
@@ -310,7 +310,7 @@ def browser_js(code):         return browser_call("js", code=code)
 DS_URL = "https://api.deepseek.com/chat/completions"
 
 def deepseek_chat(messages):
-    if not DEEPSEEK_KEY: return "❌ Kei DeepSeek API Key."
+    if not DEEPSEEK_KEY: return "Kei DeepSeek API Key."
     headers = {"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"}
     payload = {"model": DEEPSEEK_MODEL, "messages": messages, "max_tokens": 2048, "temperature": 0.8}
     try:
@@ -320,10 +320,10 @@ def deepseek_chat(messages):
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8")[:200] if e.fp else ""
         log.error(f"DS Fehler {e.code}: {body}")
-        return f"❌ DeepSeek Fehler {e.code}"
+        return f"DeepSeek Fehler {e.code}"
     except Exception as e:
         log.error(f"DS Error: {e}")
-        return f"❌ Verbindigsfehler: {e}"
+        return f"Verbindigsfehler: {e}"
 
 
 # ═══════════════════════════════════════════
@@ -349,41 +349,46 @@ class BotAgent:
         if CHAT_WEBSEITE: sp += f"\nWEBSEITE: {CHAT_WEBSEITE}\n"
         if CHAT_YOUTUBE: sp += f"\nYOUTUBE: {CHAT_YOUTUBE}\n"
         sp += (
-            "\nWichtigi Regle:\n"
-            "- Du antwortisch immer uf Dütsch.\n"
-            "- Bisch freundlich, kompetent und professionell.\n"
-            "- Hesch en eigeni Persönlichkeit.\n"
-            "- Verwend HTML-Formatierig für Telegram.\n\n"
-            "╔═══════════════════════════════════════════════╗\n"
-            "║   🔥 WICHTIG: DU HESCH EINEN BROWSER!        ║\n"
-            "║   DU MACHTSCH SELBER — NUR ZUESCHAUE!       ║\n"
-            "╚═══════════════════════════════════════════════╝\n\n"
-            "KRITISCHE REGEL: Wenn en User öppis wett wo e Website bruucht ->\n"
-            "DU machsch das im Browser, DU erklärsch nöd wie de User's mache söll!\n\n"
-            "SO GEITS:\n"
-            "Schrib [BROWSER: befehlparameter] DIREKT i dine Antwort.\n"
-            "Ich füehr de Befehl us, gib der s'Resultat, und du machsch witter.\n\n"
-            "BROWSER-BEFÄHL:\n"
-            "- [BROWSER: navigate URL] — Site öffne\n"
-            "- [BROWSER: click selector] — Uf Element klicke (z.B. #login-button, .video-title)\n"
-            "- [BROWSER: type selector | text] — Text i es Feld tippe\n"
-            "- [BROWSER: text] — Ganze Site-Inhalt läse\n"
-            "- [BROWSER: text selector] — Text vo bestimmem Element\n"
-            "- [BROWSER: js code] — JS usführe (für Fortgschritteni)\n\n"
-            "BEISPIEL:\n"
-            "User: \"öffne YouTube und zeig mini Videos\"\n"
-            "Du: „Klar, ich luege! [BROWSER: navigate https://youtube.com]\u201C\n"
-            "-> Du bechunsch: Site-Title, URL, und Inhalt.\n"
-            "-> Du gsehsch obs e Login-Bruucht oder ob YouTube direkt offe isch.\n"
-            "-> [BROWSER: click #avatar-btn] go Profil-Menü öffne\n"
-            "-> [BROWSER: click a[href*=channel]] go zum Kanal\n"
-            "-> [BROWSER: text] zum d'Video-Liste läse\n"
-            "-> Dänn antwortisch em User was du gfunde hesch!\n\n"
-            "WICHTIG:\n"
-            "- Bruuch [BROWSER: text] NACHDEM du öppis gmacht hesch, zum prüefe obs klappt het.\n"
-            "- D'Logins blibed erhalten. Bisch du YouTube/Instagram etc. igloggt -> perfekt!\n"
-            "- Wenn du nid wittsch was tippe: bruuch [BROWSER: text] zum d'Site z verstoh.\n"
-            "- Mehreri Befähl i eim Satz -> alli nacheinander usgfüehrt.\n"
+            "\n--- WICHTIG: DU HESCH EINEN BROWSER ---\n\n"
+            "KRITISCH: Sag NIEMALS 'ich kann das nicht' oder 'ich habe keinen Zugriff'.\n"
+            "DU HAST EINEN EIGENEN BROWSER. Du machst selber!\n\n"
+            "WAS STIMMT:\n"
+            "- Der Browser ist persistent - Sessions und Cookies bleiben erhalten\n"
+            "- Du bist in allen Accounts bereits eingeloggt (YouTube, Gmail, etc.)\n"
+            "- Navigiere einfach auf youtube.com und du siehst dein Dashboard\n"
+            "- Du brauchst KEINE Passwoerter - Sessions sind schon im Browser gespeichert\n"
+            "- DU machst die Arbeit, nicht der User\n\n"
+            "WAS FALSCH IST (sag das NIE):\n"
+            "- 'Ich kann kein Geraet steuern'\n"
+            "- 'Ich habe keinen Zugriff'\n"
+            "- 'Geschwindigkeit und Fortschritt variieren'\n"
+            "- 'Mach das selber'\n"
+            "- 'Gib mir dein Passwort'\n"
+            "- Erkläre Schritt-fuer-Schritt - mach es einfach!\n\n"
+            "SO FUNKTIONIERT'S:\n"
+            "Schreib [BROWSER: befehl] direkt in deine Antwort.\n"
+            "Ich fuehre den Befehl aus, gebe dir das Resultat, und du machst weiter.\n\n"
+            "BROWSER-BEFEHLE:\n"
+            "- [BROWSER: navigate URL] - Seite oeffnen\n"
+            "- [BROWSER: click selector] - Auf Element klicken\n"
+            "- [BROWSER: type selector | text] - Text eingeben\n"
+            "- [BROWSER: text] - Seiten-Inhalt lesen\n"
+            "- [BROWSER: text selector] - Text von bestimmtem Element\n"
+            "- [BROWSER: js code] - JavaScript ausfuehren\n\n"
+            "BEISPIEL (richtig):\n"
+            "User: 'oeffne YouTube und zeig meine Videos'\n"
+            "Du: Klar, ich schau! [BROWSER: navigate https://youtube.com]\n"
+            "-> Du bekommst die Seiten-Daten (Title, URL, Content)\n"
+            "-> Siehst du den Avatar/channel-link? Schon eingeloggt! [BROWSER: click #avatar-btn]\n"
+            "-> [BROWSER: click a[href*=/channel/]]\n"
+            "-> [BROWSER: text] lesen was da steht\n"
+            "-> Antworte: 'Ich habe deine Videos angesehen. Dein Channel heisst Klickspende, letztes Video: ...'\n\n"
+            "WICHTIGE REGELN:\n"
+            "1. Nach [BROWSER: navigate] immer [BROWSER: text] zum Pruefen obs funktioniert hat\n"
+            "2. Wenn die Login-Seite kommt -> Kein Problem! Session-Cookies sind schon da -> einfach auf richtige Seite navigieren\n"
+            "3. Keine Schritte erklaeren - mach sie!\n"
+            "4. Mehrere Befehle in einem Satz -> alle nacheinander ausgefuehrt\n"
+            "5. Im Zweifel: navigieren und machen - nicht fragen!\n"
         )
         return sp
 
@@ -407,68 +412,68 @@ class BotAgent:
         if t.startswith("!browse "):
             url = t[8:].strip()
             send_action(chat_id)
-            send_message(chat_id, f"🌐 Öffne {url}...", reply_to)
+            send_message(chat_id, f"Oeffne {url}...", reply_to)
             r = browser_navigate(url)
             if r.get("status") == "ok":
                 send_chunked(chat_id,
-                    f"<b>🌐 {r.get('title','')}</b>\n<code>{r.get('url','')}</code>\n\n{r.get('text','')[:2500]}")
-            else: send_message(chat_id, f"❌ {r.get('message','Fehler')}")
+                    f"<b>{r.get('title','')}</b>\n<code>{r.get('url','')}</code>\n\n{r.get('text','')[:2500]}")
+            else: send_message(chat_id, f"Fehler: {r.get('message','Error')}")
             return True
         if t.startswith("!click "):
             r = browser_click(t[7:].strip())
-            send_message(chat_id, "✅" if r.get("status")=="ok" else f"❌ {r.get('message','Fehler')}")
+            send_message(chat_id, "Geklickt" if r.get("status")=="ok" else f"Fehler: {r.get('message','Error')}")
             return True
         if t.startswith("!type "):
             rest = t[6:].strip()
             sel, txt = ("body", rest) if "|" not in rest else rest.split("|", 1)
             r = browser_type(sel.strip(), txt.strip())
-            send_message(chat_id, "✅" if r.get("status")=="ok" else f"❌ {r.get('message','Fehler')}")
+            send_message(chat_id, "Getippt" if r.get("status")=="ok" else f"Fehler: {r.get('message','Error')}")
             return True
         if t.startswith("!text"):
             r = browser_text(t[5:].strip() or "body")
             if r.get("status")=="ok": send_chunked(chat_id, r.get('text','')[:4000])
-            else: send_message(chat_id, f"❌ {r.get('message','Fehler')}")
+            else: send_message(chat_id, f"Fehler: {r.get('message','Error')}")
             return True
         if t == "!screenshot":
             send_action(chat_id, "upload_photo")
             r = browser_screenshot()
-            send_message(chat_id, "📸 Screenshot gmacht" if r.get("status")=="ok" else f"❌ {r.get('message','Fehler')}")
+            send_message(chat_id, "Screenshot gemacht" if r.get("status")=="ok" else f"Fehler: {r.get('message','Error')}")
             return True
         if t.startswith("!js "):
             r = browser_js(t[4:].strip())
             if r.get("status")=="ok": send_chunked(chat_id, f"<b>JS:</b>\n<code>{r.get('result','')[:3000]}</code>")
-            else: send_message(chat_id, f"❌ {r.get('message','Fehler')}")
+            else: send_message(chat_id, f"Fehler: {r.get('message','Error')}")
             return True
         return False
 
     def handle_update(self, chat_id):
-        send_message(chat_id, f"🔄 <b>Auto-Update</b>\nAktuell: v{self.current_version}\nPrüefe...")
+        send_message(chat_id, f"<b>Auto-Update</b>\nAktuell: v{self.current_version}\nPruefe...")
         result = check_for_updates(chat_id)
         if result == "restart":
-            send_message(chat_id, "🔄 Bot startet neu mit neuer Version...")
-            log.info("🔄 Self-restart für Update...")
+            send_message(chat_id, "Bot startet neu mit neuer Version...")
+            log.info("Self-restart fuer Update...")
             os._exit(0)  # Docker restart: always -> startet neu!
         return True
 
     def _execute_browser_tool(self, cmd):
-        """Führt en [BROWSER: ...] Befehl us und git es Resultat zrugg."""
+        """Fuehrt en [BROWSER: ...] Befehl us und git es Resultat zrugg."""
         cmd = cmd.strip()
-        log.info(f"🧰 Browser-Tool: {cmd[:80]}")
-        
+        log.info(f"Browser-Tool: {cmd[:80]}")
+
         if cmd.startswith("navigate "):
             url = cmd[9:].strip()
             r = browser_navigate(url)
             if r.get("status") == "ok":
                 return f"[BROWSER RESULTAT] Site gelade: {r.get('title','')} | URL: {r.get('url','')}\nInhalt (Aafang): {r.get('text','')[:1500]}"
             return f"[BROWSER FEHLER] Navigate: {r.get('message','')}"
-        
+
         if cmd.startswith("click "):
             sel = cmd[6:].strip()
             r = browser_click(sel)
             if r.get("status") == "ok":
-                return f"[BROWSER RESULTAT] Klick uf '{sel}' ✅"
+                return f"[BROWSER RESULTAT] Klick uf '{sel}'"
             return f"[BROWSER FEHLER] Click: {r.get('message','')}"
-        
+
         if cmd.startswith("type "):
             rest = cmd[5:].strip()
             if "|" in rest:
@@ -477,104 +482,104 @@ class BotAgent:
             else:
                 r = browser_type("body", rest)
             if r.get("status") == "ok":
-                return f"[BROWSER RESULTAT] Text igäh ✅"
+                return f"[BROWSER RESULTAT] Text igaeh"
             return f"[BROWSER FEHLER] Type: {r.get('message','')}"
-        
+
         if cmd == "text" or cmd.startswith("text "):
             sel = cmd[5:].strip() if len(cmd) > 4 else "body"
             r = browser_text(sel)
             if r.get("status") == "ok":
                 return f"[BROWSER RESULTAT] Text vo de Site:\n{r.get('text','')[:2000]}"
             return f"[BROWSER FEHLER] Text: {r.get('message','')}"
-        
+
         if cmd.startswith("js "):
             code = cmd[3:].strip()
             r = browser_js(code)
             if r.get("status") == "ok":
                 return f"[BROWSER RESULTAT] JS: {r.get('result','')[:1500]}"
             return f"[BROWSER FEHLER] JS: {r.get('message','')}"
-        
+
         return f"[BROWSER FEHLER] Unbekannte Befehl: {cmd[:60]}"
 
     def _process_browser_tools(self, response_text, chat_id, reply_to):
-        """Findet [BROWSER: ...] im Text, füehrt si us, git de restliche Text zrugg + s'Resultat."""
+        """Findet [BROWSER: ...] im Text, fuehrt si us, git de restliche Text zrugg + s'Resultat."""
         import re
         pattern = r'\[BROWSER:\s*(.*?)\]'
         matches = re.findall(pattern, response_text, re.IGNORECASE)
-        
+
         if not matches:
-            return response_text, None  # Kei Browser-Befähl
-        
-        # Text ohni Browser-Befähl
+            return response_text, None  # Kei Browser-Befaehl
+
+        # Text ohni Browser-Befaehl
         clean_text = re.sub(pattern, '', response_text, flags=re.IGNORECASE).strip()
-        
+
         results = []
         for cmd in matches:
             result = self._execute_browser_tool(cmd.strip())
             results.append(result)
-        
+
         result_text = "\n\n---\n".join(results)
         return clean_text, result_text
 
     def handle_message(self, chat_id, text, reply_to=None):
-        # Expliziti Browser-Befähl (!browse, etc.) behandlet handle_browse
+        # Expliziti Browser-Befaehl (!browse, etc.) behandlet handle_browse
         if self.handle_browse(chat_id, text, reply_to):
             self.self_improving.record_interaction(text, f"[Browser: {text[:50]}]")
             return
-        
+
         send_action(chat_id)
         self.add_message(chat_id, "user", text)
-        
+
         # Korrektur erkannt?
         history = self.get_history(chat_id)
         historical_response = None
         if len(history) >= 3:
             for m in reversed(history):
                 if m["role"] == "assistant":
-                    if any(w in text.lower() for w in ["falsch","nei","nöd so","stimmt nöd","korrektur"]):
+                    if any(w in text.lower() for w in ["falsch","nei","noed so","stimmt noed","korrektur"]):
                         historical_response = m["content"][:300]
                     break
 
         # Tool-Use Loop: max 10 Iteratione zum endloss Schleife verhindere
         max_tool_loops = 10
         final_response = None
-        
+
         for loop in range(max_tool_loops):
             try:
                 response = deepseek_chat(self.get_history(chat_id))
             except Exception as e:
-                response = f"❌ Fehler: {e}"
+                response = f"Fehler: {e}"
                 self.self_improving.record_interaction(text, "", error=str(e))
                 send_message(chat_id, response, reply_to)
                 return
-            
-            # Browser-Befähl im Response finde und usfüehre
+
+            # Browser-Befaehl im Response finde und usfuehre
             clean_response, tool_results = self._process_browser_tools(response, chat_id, reply_to)
-            
+
             if tool_results is None:
-                # Kei Browser-Befähl -> fertig
+                # Kei Browser-Befaehl -> fertig
                 final_response = response
                 self.add_message(chat_id, "assistant", response)
                 break
-            
+
             # Browser-Resultat als System-Nachricht a DeepSeek zrugggeh
-            log.info(f"🔄 Tool-Loop {loop+1}: Browser-Befähl usgfüehrt")
-            self.add_message(chat_id, "assistant", clean_response if clean_response else "[Usez Browser...]")
-            
-            # Resultat als system message (damit DeepSeek reagiert)
-            tool_msg = {"role": "system", "content": f"BROWSER-RESULTAT:\n{tool_results}\n\nMach witter. Wenn alles erledigt isch, antwort dein Benutzer uf Dütsch."}
+            log.info(f"Tool-Loop {loop+1}: Browser-Befaehl usgfuehrt")
+            self.add_message(chat_id, "assistant", clean_response if clean_response else "[Browser]")
+
+            # Resultat als system message (damit DeepSeek drauf reagiert)
+            tool_msg = {"role": "system", "content": f"BROWSER-RESULTAT:\n{tool_results}\n\nMach witter. Wenn alles erledigt isch, antwort dein Benutzer auf Deutsch."}
             history = self.get_history(chat_id)
             history.append(tool_msg)
-        
+
         else:
             # Max Loop erreicht
             final_response = response if final_response is None else final_response
-            log.warning(f"⚠️ Tool-Loop Limit erreicht ({max_tool_loops})")
-        
+            log.warning(f"Tool-Loop Limit erreicht ({max_tool_loops})")
+
         # Letzti Antwort
         if final_response:
             self.add_message(chat_id, "assistant", final_response)
-            error = "Bot Fehler" if "❌" in final_response or "Fehler" in final_response else None
+            error = "Bot Fehler" if "Fehler" in final_response else None
             self.self_improving.record_interaction(text, final_response, error)
             if historical_response:
                 self.self_improving.record_correction(text, historical_response, "Korrektur autom. erkannt")
@@ -585,64 +590,64 @@ class BotAgent:
     def handle_start(self, chat_id, first_name=""):
         version = self.current_version
         memories = self.self_improving.load_memories()
-        mem_info = f"🧠 {len(memories)} Lektionen gspiicheret" if memories else "🧠 Noni gspiicherti Erfahrige"
+        mem_info = f"{len(memories)} Lektionen gspiicheret" if memories else "Noch kei gspiicherti Erfahrige"
         send_message(chat_id,
-            f"👋 Hoi {first_name}!\n\n"
-            f"Ich bin <b>{BOT_NAME}</b> 🤖 | v{version}\n"
-            f"📌 {PROJEKT_ID}\n"
+            f"Hoi {first_name}!\n\n"
+            f"Ich bin <b>{BOT_NAME}</b> | v{version}\n"
+            f"{PROJEKT_ID}\n"
             f"{mem_info}\n\n"
-            f"<b>Befähl:</b>\n"
-            f"<code>!browse https://...</code> — Site öffne\n"
-            f"<code>!click button</code> — Element klicke\n"
-            f"<code>!type input | Text</code> — Text igäh\n"
-            f"<code>!screenshot</code> — Screenshot mache\n"
-            f"<code>!update</code> — Bot automatisch update\n"
-            f"<code>!reflect</code> — Selbstreflexion\n"
-            f"<code>!memory</code> — Gspiicherti Lektion\n\n"
-            f"Schrib mir! 🚀")
+            f"<b>Befaehl:</b>\n"
+            f"<code>!browse https://...</code> - Site oeffne\n"
+            f"<code>!click button</code> - Element klicke\n"
+            f"<code>!type input | Text</code> - Text igaeh\n"
+            f"<code>!screenshot</code> - Screenshot mache\n"
+            f"<code>!update</code> - Bot automatisch update\n"
+            f"<code>!reflect</code> - Selbstreflexion\n"
+            f"<code>!memory</code> - Gspiicherti Lektion\n\n"
+            f"Schrib mir!")
 
     def handle_help(self, chat_id):
         send_message(chat_id,
-            f"<b>🤖 {BOT_NAME} — Hilfe</b>\n\n"
-            f"💬 <b>Befähl:</b>\n"
-            f"/start — Neustart\n"
-            f"/help — Hilfe\n"
-            f"/info — Über mich\n\n"
-            f"<b>🌐 Browser:</b>\n"
-            f"<code>!browse URL</code> — Site öffne\n"
-            f"<code>!click SELECTOR</code> — Klicke\n"
-            f"<code>!type SELECTOR | TEXT</code> — Tippe\n"
-            f"<code>!screenshot</code> — Screenshot\n"
-            f"<code>!js CODE</code> — JS usführe\n\n"
-            f"<b>🧠 Auto-Update:</b>\n"
-            f"<code>!update</code> — Code vo GitHub lade & neu starte\n"
-            f"Der Bot prüeft automatisch alli 60 Minute obs es Update git!\n\n"
-            f"<b>🧠 Self-Improving:</b>\n"
-            f"<code>!reflect</code> — Jetzt reflektiere\n"
-            f"<code>!memory</code> — Lektion ahluege\n"
-            f"<code>!forget</code> — Gedächtnis leere")
+            f"<b>Hilfe</b>\n\n"
+            f"Befaehl:\n"
+            f"/start - Neustart\n"
+            f"/help - Hilfe\n"
+            f"/info - Ueber mich\n\n"
+            f"Browser:\n"
+            f"<code>!browse URL</code> - Site oeffne\n"
+            f"<code>!click SELECTOR</code> - Klicke\n"
+            f"<code>!type SELECTOR | TEXT</code> - Tippe\n"
+            f"<code>!screenshot</code> - Screenshot\n"
+            f"<code>!js CODE</code> - JS usfuehre\n\n"
+            f"Auto-Update:\n"
+            f"<code>!update</code> - Code vo GitHub lade & neu starte\n"
+            f"Der Bot prueft automatisch alli 60 Minute obs es Update git!\n\n"
+            f"Self-Improving:\n"
+            f"<code>!reflect</code> - Jetzt reflektiere\n"
+            f"<code>!memory</code> - Lektion ahluege\n"
+            f"<code>!forget</code> - Gedaechtnis leere")
 
     def handle_info(self, chat_id):
         n_mem = len(self.self_improving.load_memories())
         send_message(chat_id,
-            f"<b>ℹ️ {BOT_NAME}</b>\n"
-            f"📁 Projekt: {PROJEKT_ID}\n"
-            f"🧠 Modell: {DEEPSEEK_MODEL}\n"
-            f"📦 Version: v{self.current_version}\n"
-            f"🧠 Self-Improving: ✅ ({n_mem} Lektionen)\n"
-            f"🔄 Auto-Update: ✅ (GitHub, alli 60min)\n"
-            f"🌐 Browser: ✅ ({BROWSER_URL})")
+            f"<b>{BOT_NAME}</b>\n"
+            f"Projekt: {PROJEKT_ID}\n"
+            f"Modell: {DEEPSEEK_MODEL}\n"
+            f"Version: v{self.current_version}\n"
+            f"Self-Improving: ({n_mem} Lektionen)\n"
+            f"Auto-Update: (GitHub, alli 60min)\n"
+            f"Browser: ({BROWSER_URL})")
 
     def handle_reflect(self, chat_id):
-        send_message(chat_id, "🔄 Starte Selbstreflexion...")
+        send_message(chat_id, "Starte Selbstreflexion...")
         self.self_improving.run_self_review(chat_id)
 
     def handle_memory(self, chat_id):
         memories = self.self_improving.load_memories()
         if memories:
-            send_chunked(chat_id, f"<b>🧠 Gspiicherti Lektion:</b>\n\n{memories[:4000]}")
+            send_chunked(chat_id, f"<b>Gspiicherti Lektion:</b>\n\n{memories[:4000]}")
         else:
-            send_message(chat_id, "📭 Kei Lektion gspiicheret. Bruuch <code>!reflect</code> zum starte!")
+            send_message(chat_id, "Kei Lektion gspiicheret. Bruuch <code>!reflect</code> zum starte!")
 
     def handle_forget(self, chat_id):
         for f in [self.self_improving.memory_file, self.self_improving.corrections_file, self.self_improving.interactions_file]:
@@ -650,19 +655,19 @@ class BotAgent:
             except: pass
         self.self_improving.message_count = 0
         self.self_improving._save_state()
-        send_message(chat_id, "🧹 Gedächtnis glerrt! Frischer Start 🆕")
+        send_message(chat_id, "Gedaechtnis glerrt! Frischer Start")
 
     def _auto_update_check(self):
-        """Prüeft automatisch alli 60 Minute obs es Update git."""
+        """Prueft automatisch alli 60 Minute obs es Update git."""
         now = time.time()
         if now - self.last_update_check < 3600:  # 60 min
             return
         self.last_update_check = now
-        log.info("🔍 Auto-Update-Check...")
+        log.info("Auto-Update-Check...")
         try:
             result = check_for_updates()
             if result == "restart":
-                log.info("🔄 Auto-Update: Restart...")
+                log.info("Auto-Update: Restart...")
                 os._exit(0)
         except Exception as e:
             log.warning(f"Auto-Update check failed: {e}")
@@ -679,7 +684,7 @@ class BotAgent:
             first_name = msg.get("from", {}).get("first_name", "")
             reply_to = msg.get("message_id")
             if not text: continue
-            log.info(f"📨 {first_name}: {text[:60]}")
+            log.info(f"{first_name}: {text[:60]}")
 
             if text.startswith("/start"): self.handle_start(chat_id, first_name)
             elif text.startswith("/help"): self.handle_help(chat_id)
@@ -689,7 +694,7 @@ class BotAgent:
             elif text == "!memory": self.handle_memory(chat_id)
             elif text == "!forget": self.handle_forget(chat_id)
             else: self.handle_message(chat_id, text, reply_to)
-            
+
             # Nach jeder Nohricht: Update-Check
             self._auto_update_check()
 
@@ -704,6 +709,6 @@ class BotAgent:
 
 if __name__ == "__main__":
     if not BOT_TOKEN:
-        print("❌ Kei TELEGRAM_BOT_TOKEN")
+        log.error("Kei TELEGRAM_BOT_TOKEN")
         sys.exit(1)
     BotAgent().run()

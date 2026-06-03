@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0",
+  "version": "2.2.0",
   "bot_url": "https://raw.githubusercontent.com/Novaai40/bot-zentrale/main/bot.py",
-  "changelog": "Autonome Browser-Tool-Use: Bot navigiert selber, klickt, tippt, liest Site-Inhalt. Muess nid erkläre — MACHTS!",
-  "min_bot_version": "2.0.0"
+  "changelog": "v2.2.0 - Kei 'ich kann nicht' Refusals meh! Bot navigiert direkt zu YouTube Studio, Accounts, eingeloggt via persistente Cookies. DU machsch, nid erkläre!",
+  "min_bot_version": "2.1.0"
 }
