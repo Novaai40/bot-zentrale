@@ -353,7 +353,32 @@ class BotAgent:
             "- Du antwortisch immer uf Dütsch.\n"
             "- Bisch freundlich, kompetent und professionell.\n"
             "- Hesch en eigeni Persönlichkeit.\n"
-            "- Verwend HTML-Formatierig für Telegram.\n"
+            "- Verwend HTML-Formatierig für Telegram.\n\n"
+            "╔═══════════════════════════════════════════════╗\n"
+            "║     🌐 DU HESCH EINEN BROWSER!               ║\n"
+            "╚═══════════════════════════════════════════════╝\n\n"
+            "Du chasch **aktiv s'Internet bruuche**! Wenn en User öppis frogt wo e\n"
+            "Website bruucht (YouTube, Instagram, Google, Recherchi, Login, Upload, etc.),\n"
+            "machsch du das **automatisch**!\n\n"
+            "<b>SO FUNKTIONIERT'S:</b>\n"
+            "Wenn du öppis im Browser mache wetsch, schribsch du eifach: [BROWSER: befehl]\n"
+            "Ich füehr de Befehl us und geb der s'Resultat zrugg.\n\n"
+            "<b>VERFÜEGBARI BROWSER-BEFÄHL:</b>\n"
+            "• [BROWSER: navigate URL] — Site öffne\n"
+            "• [BROWSER: click SELECTOR] — Element klicke\n"
+            "• [BROWSER: type SELECTOR | TEXT] — Text igäh\n"
+            "• [BROWSER: text] — Aktuelle Site-Inhalt läse\n"
+            "• [BROWSER: text SELECTOR] — Text vo bestimmem Element\n"
+            "• [BROWSER: js CODE] — JavaScript usführe\n\n"
+            "<b>BEISPIEL:</b> User seit ""öffne YouTube und zeig mini Videos""\n"
+            "Du antwortisch: Ich goh uf YouTube luege! [BROWSER: navigate https://youtube.com]\n"
+            "→ Ich füehr de Befehl us und melde di zrugg: YouTube isch offe, du bisch igloggt.\n"
+            "→ Du erhaltsch s'Resultat und chasch witermache.\n\n"
+            "<b>WICHTIG:</b>\n"
+            "- D'Logins und Cookies blibed pro Projekt erhalten!\n"
+            "- Du chasch mehreri Browser-Befähl i eim Satz schicke.\n"
+            "- Bisch du scho uf de richtige Site, bruuchsch kei navigate.\n"
+            "- Nach jedem Browser-Befähl bechunsch automatisch s'Resultat.\n"
         )
         return sp
 
@@ -420,10 +445,78 @@ class BotAgent:
             os._exit(0)  # Docker restart: always -> startet neu!
         return True
 
+    def _execute_browser_tool(self, cmd):
+        """Führt en [BROWSER: ...] Befehl us und git es Resultat zrugg."""
+        cmd = cmd.strip()
+        log.info(f"🧰 Browser-Tool: {cmd[:80]}")
+        
+        if cmd.startswith("navigate "):
+            url = cmd[9:].strip()
+            r = browser_navigate(url)
+            if r.get("status") == "ok":
+                return f"[BROWSER RESULTAT] Site gelade: {r.get('title','')} | URL: {r.get('url','')}\nInhalt (Aafang): {r.get('text','')[:1500]}"
+            return f"[BROWSER FEHLER] Navigate: {r.get('message','')}"
+        
+        if cmd.startswith("click "):
+            sel = cmd[6:].strip()
+            r = browser_click(sel)
+            if r.get("status") == "ok":
+                return f"[BROWSER RESULTAT] Klick uf '{sel}' ✅"
+            return f"[BROWSER FEHLER] Click: {r.get('message','')}"
+        
+        if cmd.startswith("type "):
+            rest = cmd[5:].strip()
+            if "|" in rest:
+                sel, txt = rest.split("|", 1)
+                r = browser_type(sel.strip(), txt.strip())
+            else:
+                r = browser_type("body", rest)
+            if r.get("status") == "ok":
+                return f"[BROWSER RESULTAT] Text igäh ✅"
+            return f"[BROWSER FEHLER] Type: {r.get('message','')}"
+        
+        if cmd == "text" or cmd.startswith("text "):
+            sel = cmd[5:].strip() if len(cmd) > 4 else "body"
+            r = browser_text(sel)
+            if r.get("status") == "ok":
+                return f"[BROWSER RESULTAT] Text vo de Site:\n{r.get('text','')[:2000]}"
+            return f"[BROWSER FEHLER] Text: {r.get('message','')}"
+        
+        if cmd.startswith("js "):
+            code = cmd[3:].strip()
+            r = browser_js(code)
+            if r.get("status") == "ok":
+                return f"[BROWSER RESULTAT] JS: {r.get('result','')[:1500]}"
+            return f"[BROWSER FEHLER] JS: {r.get('message','')}"
+        
+        return f"[BROWSER FEHLER] Unbekannte Befehl: {cmd[:60]}"
+
+    def _process_browser_tools(self, response_text, chat_id, reply_to):
+        """Findet [BROWSER: ...] im Text, füehrt si us, git de restliche Text zrugg + s'Resultat."""
+        import re
+        pattern = r'\[BROWSER:\s*(.*?)\]'
+        matches = re.findall(pattern, response_text, re.IGNORECASE)
+        
+        if not matches:
+            return response_text, None  # Kei Browser-Befähl
+        
+        # Text ohni Browser-Befähl
+        clean_text = re.sub(pattern, '', response_text, flags=re.IGNORECASE).strip()
+        
+        results = []
+        for cmd in matches:
+            result = self._execute_browser_tool(cmd.strip())
+            results.append(result)
+        
+        result_text = "\n\n---\n".join(results)
+        return clean_text, result_text
+
     def handle_message(self, chat_id, text, reply_to=None):
+        # Expliziti Browser-Befähl (!browse, etc.) behandlet handle_browse
         if self.handle_browse(chat_id, text, reply_to):
             self.self_improving.record_interaction(text, f"[Browser: {text[:50]}]")
             return
+        
         send_action(chat_id)
         self.add_message(chat_id, "user", text)
         
@@ -437,22 +530,52 @@ class BotAgent:
                         historical_response = m["content"][:300]
                     break
 
-        try:
-            response = deepseek_chat(self.get_history(chat_id))
-        except Exception as e:
-            response = f"❌ Fehler: {e}"
-            self.self_improving.record_interaction(text, "", error=str(e))
-            send_message(chat_id, response, reply_to)
-            return
-
-        self.add_message(chat_id, "assistant", response)
-        error = "Bot Fehler" if "❌" in response or "Fehler" in response else None
-        self.self_improving.record_interaction(text, response, error)
-        if historical_response:
-            self.self_improving.record_correction(text, historical_response, "Korrektur autom. erkannt")
-        if self.self_improving.should_self_review():
-            self.self_improving.run_self_review(chat_id)
-        send_message(chat_id, response, reply_to)
+        # Tool-Use Loop: max 10 Iteratione zum endloss Schleife verhindere
+        max_tool_loops = 10
+        final_response = None
+        
+        for loop in range(max_tool_loops):
+            try:
+                response = deepseek_chat(self.get_history(chat_id))
+            except Exception as e:
+                response = f"❌ Fehler: {e}"
+                self.self_improving.record_interaction(text, "", error=str(e))
+                send_message(chat_id, response, reply_to)
+                return
+            
+            # Browser-Befähl im Response finde und usfüehre
+            clean_response, tool_results = self._process_browser_tools(response, chat_id, reply_to)
+            
+            if tool_results is None:
+                # Kei Browser-Befähl -> fertig
+                final_response = response
+                self.add_message(chat_id, "assistant", response)
+                break
+            
+            # Browser-Resultat als System-Nachricht a DeepSeek zrugggeh
+            log.info(f"🔄 Tool-Loop {loop+1}: Browser-Befähl usgfüehrt")
+            self.add_message(chat_id, "assistant", clean_response if clean_response else "[Usez Browser...]")
+            
+            # Resultat als system message (damit DeepSeek reagiert)
+            tool_msg = {"role": "system", "content": f"BROWSER-RESULTAT:\n{tool_results}\n\nMach witter. Wenn alles erledigt isch, antwort dein Benutzer uf Dütsch."}
+            history = self.get_history(chat_id)
+            history.append(tool_msg)
+        
+        else:
+            # Max Loop erreicht
+            final_response = response if final_response is None else final_response
+            log.warning(f"⚠️ Tool-Loop Limit erreicht ({max_tool_loops})")
+        
+        # Letzti Antwort
+        if final_response:
+            self.add_message(chat_id, "assistant", final_response)
+            error = "Bot Fehler" if "❌" in final_response or "Fehler" in final_response else None
+            self.self_improving.record_interaction(text, final_response, error)
+            if historical_response:
+                self.self_improving.record_correction(text, historical_response, "Korrektur autom. erkannt")
+            if self.self_improving.should_self_review():
+                self.self_improving.run_self_review(chat_id)
+            send_message(chat_id, final_response, reply_to)
 
     def handle_start(self, chat_id, first_name=""):
         version = self.current_version

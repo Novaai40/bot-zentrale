@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "bot_url": "https://raw.githubusercontent.com/Novaai40/bot-zentrale/main/bot.py",
-  "changelog": "Auto-Update + Self-Improving + Browser Bridge. Bots learned sich selber!",
+  "changelog": "Autonome Browser-Tool-Use: Bot chan [BROWSER: ...] Befähl selber gäb! Loggt sich i, navigiert, tippt — alles automatisch!",
   "min_bot_version": "2.0.0"
 }
