@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "bot_url": "https://raw.githubusercontent.com/Novaai40/bot-zentrale/main/bot.py",
-  "changelog": "Initial release mit Self-Improving + Browser + Auto-Update",
-  "min_bot_version": "1.0.0"
+  "changelog": "Auto-Update + Self-Improving + Browser Bridge. Bots learned sich selber!",
+  "min_bot_version": "2.0.0"
 }
