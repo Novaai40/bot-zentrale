@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 # ═══════════════════════════════════════════
 # VERSION — wird für Auto-Update bruucht
 # ═══════════════════════════════════════════
-BOT_VERSION = "2.0.0"
+BOT_VERSION = "2.1.0"
 UPDATE_URL  = "https://raw.githubusercontent.com/Novaai40/bot-zentrale/main/bot.py"
 VERSION_URL = "https://raw.githubusercontent.com/Novaai40/bot-zentrale/main/version.json"
 
